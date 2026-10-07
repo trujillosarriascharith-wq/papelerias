@@ -6,10 +6,14 @@ import '../theme/colores.dart';
 import '../theme/estilostextos.dart';
 import '../widgets/barrasuperior.dart';
 import '../services/google_auth_service.dart';
+import '../services/auth_service.dart';
 import '../widgets/campodetexto.dart';
 import '../widgets/fondocurvo.dart';
 import '../widgets/fondodegradado.dart';
 import '../widgets/botondegradado.dart';
+import 'principal_clienet.dart';
+import 'admin_home.dart';
+
 
 class InicioSesion extends StatefulWidget {
   const InicioSesion({super.key});
@@ -38,11 +42,45 @@ class _InicioSesionState extends State<InicioSesion> {
   }
 
   Future<void> _iniciarSesion() async {
+    final nombre = _nombre.text.trim();
+    final correo = _correo.text.trim();
+    final password = _password.text;
+
+    if (nombre.isEmpty || correo.isEmpty || password.isEmpty) {
+      _aviso('Completa todos los campos');
+      return;
+    }
+
     setState(() => _cargando = true);
-    // TODO: llamar aquí a tu servicio de login
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) setState(() => _cargando = false);
+    final r = await AuthService.login(
+      nombre: nombre,
+      correo: correo,
+      password: password,
+    );
+    if (!mounted) return;
+    setState(() => _cargando = false);
+
+    if (!r.exito) {
+      _aviso(r.mensaje);
+      return;
+    }
+
+    _irSegunRol(r.usuario?['rol']?.toString());
   }
+
+  void _irSegunRol(String? rol) {
+  debugPrint('ROL RECIBIDO: $rol');
+
+  final esAdmin = (rol ?? '').toLowerCase().startsWith('admin');
+  final Widget destino =
+      esAdmin ? const AdminHomeScreen() : const PrincipalClient();
+
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (_) => destino),
+    (_) => false,
+  );
+}
 
   Future<void> _iniciarConGoogle() async {
     try {
@@ -90,7 +128,7 @@ class _InicioSesionState extends State<InicioSesion> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: BarraSuperior(
               onInicio: () => Navigator.pop(context),
-             
+
               colorIconos: Colors.black,
               compacto: true,
             ),

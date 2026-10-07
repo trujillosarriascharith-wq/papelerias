@@ -79,8 +79,8 @@ class HomeScreen extends StatelessWidget {
                         MaterialPageRoute(builder: (_) => const PerfilScreen()),
                       );
                     },
-                    onCarrito: () {},
-                    onNotificaciones: () => _abrirNotificaciones(context),
+                    // onCarrito: () {},
+                    // onNotificaciones: () => _abrirNotificaciones(context),
                     onRegistro: () {
                       Navigator.push(
                         context,

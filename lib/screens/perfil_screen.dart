@@ -6,6 +6,7 @@ import '../theme/estilostextos.dart';
 import '../widgets/barrasuperior.dart';
 import '../widgets/fondodegradado.dart';
 import '../widgets/campodetexto.dart';
+import 'home_screen.dart';
 
 
 /// Pantalla de Perfil del usuario
@@ -164,10 +165,16 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       SizedBox(
                         width: 190,
                         child: BotonDegradado(
-                          texto: 'Cerrar Sesión',
-                          icono: Icons.logout,
-                          onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
-                        ),
+  texto: 'Cerrar Sesión',
+  icono: Icons.logout,
+  onPressed: () {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const  HomeScreen()),
+      (_) => false,
+    );
+  },
+),
                       ),
                     ],
                   ),
