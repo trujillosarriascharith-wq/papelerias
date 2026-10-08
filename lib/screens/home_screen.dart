@@ -73,12 +73,12 @@ class HomeScreen extends StatelessWidget {
                 child: Center(
                   child: BarraSuperior(
                     colorIconos: Colors.black,
-                    onPerfil: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const PerfilScreen()),
-                      );
-                    },
+                    // onPerfil: () {
+                    //   Navigator.push(
+                    //     context,
+                    //     MaterialPageRoute(builder: (_) => const PerfilScreen()),
+                    //   );
+                    // },
                     // onCarrito: () {},
                     // onNotificaciones: () => _abrirNotificaciones(context),
                     onRegistro: () {

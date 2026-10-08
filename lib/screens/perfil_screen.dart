@@ -1,13 +1,12 @@
-// import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 import 'package:papelerias/widgets/botondegradado.dart';
+import '../services/auth_service.dart';
 import '../theme/colores.dart';
 import '../theme/estilostextos.dart';
 import '../widgets/barrasuperior.dart';
 import '../widgets/fondodegradado.dart';
 import '../widgets/campodetexto.dart';
 import 'home_screen.dart';
-
 
 /// Pantalla de Perfil del usuario
 class PerfilScreen extends StatefulWidget {
@@ -25,6 +24,26 @@ class _PerfilScreenState extends State<PerfilScreen> {
   final _correo = TextEditingController();
   final _direccion = TextEditingController();
   final _telefono = TextEditingController();
+  String? _fotoUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarUsuario();
+  }
+
+  Future<void> _cargarUsuario() async {
+    final u = await AuthService.usuarioGuardado();
+    if (u == null || !mounted) return;
+    setState(() {
+      _nombre.text = u['nombre']?.toString() ?? '';
+      _correo.text = u['email']?.toString() ?? '';
+      _direccion.text = u['direccion']?.toString() ?? '';
+      _telefono.text = u['telefono']?.toString() ?? '';
+      final f = u['foto']?.toString() ?? '';
+      _fotoUrl = f.isEmpty ? null : f;
+    });
+  }
 
   @override
   void dispose() {
@@ -54,12 +73,16 @@ class _PerfilScreenState extends State<PerfilScreen> {
   }
 
   Widget _fotoPerfil() {
+    final ImageProvider imagen = _fotoUrl != null
+        ? NetworkImage(_fotoUrl!)
+        : const AssetImage(_rutaFoto);
+
     return Stack(
       children: [
-        const CircleAvatar(
+        CircleAvatar(
           radius: 58,
           backgroundColor: Colors.white, //borde de la foto
-          child: CircleAvatar(radius: 54, backgroundImage: AssetImage(_rutaFoto)),
+          child: CircleAvatar(radius: 54, backgroundImage: imagen),
         ),
         Positioned(
           bottom: 0,
@@ -165,16 +188,18 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       SizedBox(
                         width: 190,
                         child: BotonDegradado(
-  texto: 'Cerrar Sesión',
-  icono: Icons.logout,
-  onPressed: () {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const  HomeScreen()),
-      (_) => false,
-    );
-  },
-),
+                          texto: 'Cerrar Sesión',
+                          icono: Icons.logout,
+                          onPressed: () async {
+                            await AuthService.cerrarSesion();
+                            if (!context.mounted) return;
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (_) => const HomeScreen()),
+                              (_) => false,
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),

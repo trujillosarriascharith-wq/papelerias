@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../services/auth_service.dart';
 import '../theme/colores.dart';
 import '../theme/estilostextos.dart';
 import '../widgets/botondegradado.dart';
@@ -9,6 +10,7 @@ import '../widgets/campodetexto.dart';
 import '../widgets/fondocurvo.dart';
 import '../widgets/medallonlogo.dart';
 import '../widgets/subbarrainicio.dart';
+import 'verificar_cuenta.dart';
 
 class Registrarse extends StatefulWidget {
   const Registrarse({super.key});
@@ -18,7 +20,6 @@ class Registrarse extends StatefulWidget {
 }
 
 class _RegistrarseState extends State<Registrarse> {
-  final _documento = TextEditingController();
   final _nombre = TextEditingController();
   final _correo = TextEditingController();
   final _direccion = TextEditingController();
@@ -29,7 +30,7 @@ class _RegistrarseState extends State<Registrarse> {
 
   @override
   void dispose() {
-    for (final c in [_documento, _nombre, _correo, _direccion, _telefono, _password]) {
+    for (final c in [_nombre, _correo, _direccion, _telefono, _password]) {
       c.dispose();
     }
     super.dispose();
@@ -43,11 +44,46 @@ class _RegistrarseState extends State<Registrarse> {
     if (mounted) setState(() => _foto = bytes);
   }
 
+  void _aviso(String mensaje) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje)));
+  }
+
   Future<void> _crearCuenta() async {
+    final nombre = _nombre.text.trim();
+    final correo = _correo.text.trim();
+    final direccion = _direccion.text.trim();
+    final telefono = _telefono.text.trim();
+    final password = _password.text;
+
+    if (nombre.isEmpty ||
+        correo.isEmpty ||
+        direccion.isEmpty ||
+        telefono.isEmpty ||
+        password.isEmpty) {
+      _aviso('Completa todos los campos');
+      return;
+    }
+
     setState(() => _cargando = true);
-    // TODO: llamar aquí a tu servicio de registro (enviar también _foto)
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) setState(() => _cargando = false);
+    final r = await AuthService.registrar(
+      nombre: nombre,
+      correo: correo,
+      telefono: telefono,
+      direccion: direccion,
+      password: password,
+      foto: _foto,
+    );
+    if (!mounted) return;
+    setState(() => _cargando = false);
+
+    _aviso(r.mensaje);
+    if (!r.exito) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => VerificarCuenta(correo: correo)),
+    );
   }
 
   Widget _campo(String etiqueta, IconData icono, TextEditingController c,
@@ -86,8 +122,6 @@ class _RegistrarseState extends State<Registrarse> {
                 const Text('Crea tu cuenta para comenzar',
                     style: TextStyle(fontSize: 13.5, color: Colors.black54)),
                 const SizedBox(height: 18),
-                _campo('Num documento', Icons.badge, _documento,
-                    tipo: TextInputType.number, prefijo: const SizedBox(width: 16)),
                 _campo('Nombre', Icons.person_outline, _nombre),
                 _campo('Correo', Icons.email, _correo,
                     tipo: TextInputType.emailAddress,
