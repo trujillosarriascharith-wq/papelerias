@@ -39,6 +39,7 @@ class AuthService {
         await prefs.setString('token', data['token']);
         await prefs.setString('usuario', jsonEncode(data['usuario']));
         Sesion.token = data['token'];
+        
         return AuthResultado(true, data['message'] ?? 'Listo',
             usuario: data['usuario']);
       }
