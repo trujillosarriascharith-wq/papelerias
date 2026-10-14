@@ -1,18 +1,107 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import '../models/producto_model.dart';
 
 class ProductoCard extends StatelessWidget {
   final VoidCallback onComprar;
   final VoidCallback onVerMas;
+  final VoidCallback? onEditar; // Solo se muestran si se pasan (admin)
+  final VoidCallback? onEliminar;
+  final ProductoModel producto;
 
   const ProductoCard({
     super.key,
+    required this.producto,
     required this.onComprar,
     required this.onVerMas,
+    this.onEditar,
+    this.onEliminar,
   });
+
+  Widget _botonAdmin({required IconData icono, required Color color, required VoidCallback onTap}) {
+    return Material(
+      color: Colors.white,
+      shape: const CircleBorder(),
+      elevation: 2,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(7),
+          child: Icon(icono, size: 18, color: color),
+        ),
+      ),
+    );
+  }
+
+  Widget _construirImagen() {
+    final String? imagen = producto.imagenUrl; // Apunta a tu columna 'imagen'
+    const double alturaFoto = 120.0;
+
+    if (imagen == null || imagen.isEmpty) {
+      return Container(
+        height: alturaFoto,
+        width: double.infinity,
+        color: Colors.pink.shade50,
+        child: const Icon(
+          Icons.icecream_rounded,
+          size: 40,
+          color: Color(0xFF9F6163),
+        ),
+      );
+    }
+
+    final bool esUrlWeb = imagen.startsWith('http://') || imagen.startsWith('https://');
+
+    return Container(
+      height: alturaFoto,
+      width: double.infinity,
+      color: Colors.grey.shade50,
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: esUrlWeb
+          ? Image.network(
+              imagen,
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  color: Colors.pink.shade50,
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF9F6163),
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: Colors.pink.shade50,
+                child: const Icon(
+                  Icons.broken_image_rounded,
+                  size: 40,
+                  color: Colors.grey,
+                ),
+              ),
+            )
+          : Image.file(
+              File(imagen),
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: Colors.pink.shade50,
+                child: const Icon(
+                  Icons.broken_image_rounded,
+                  size: 40,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -28,74 +117,105 @@ class ProductoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: Container(
-              height: 150,
-              width: double.infinity,
-              color: Colors.pink.shade50, // ROSADO PASTEL CLARITO
-              child: const Icon(
-                Icons.menu_book_rounded,
-                size: 64,
-                color: Color(0xFFFF8FAB), // ROSADO PASTEL PRINCIPAL
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                child: _construirImagen(),
               ),
-            ),
+              if (onEditar != null || onEliminar != null)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Row(
+                    children: [
+                      if (onEditar != null)
+                        _botonAdmin(icono: Icons.edit, color: const Color(0xFF7FB268), onTap: onEditar!),
+                      if (onEditar != null && onEliminar != null) const SizedBox(width: 6),
+                      if (onEliminar != null)
+                        _botonAdmin(icono: Icons.delete_outline, color: Colors.red, onTap: onEliminar!),
+                    ],
+                  ),
+                ),
+            ],
           ),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(10.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     Expanded(
                       child: Text(
-                        'Producto de Muestra',
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black87),
+                        producto.nombre,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
                       ),
                     ),
                     Text(
-                      '\$0.00',
-                      style: TextStyle(
+                      '\$${producto.precio}',
+                      style: const TextStyle(
                         fontSize: 17,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFFFF8FAB),
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF9F6163),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Este producto se actualizara automaticamente una vez este conectado al panel administrativo.',
-                  style: TextStyle(fontSize: 13, color: Colors.black54, height: 1.3),
+                const SizedBox(height: 4),
+                Text(
+                  'Stock: ${producto.stock} | ${producto.estado}',
+                  style: const TextStyle(fontSize: 11, color: Colors.black45),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
+                Text(
+                  producto.descripcion.join(', '),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Color(0xFFFF8FAB),
-                          side: const BorderSide(color: Color(0xFFFF8FAB)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          foregroundColor: const Color(0xFF916163),
+                          side: const BorderSide(color: Color(0xFF9F6163)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                         onPressed: onVerMas,
-                        child: const Text('Ver mas'),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Text('Ver más'),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFFFF8FAB), // ROSADO PASTEL
+                          backgroundColor: const Color(0xFF9F6163),
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                         onPressed: onComprar,
-                        child: const Text('Comprar'),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Text('Comprar'),
+                        ),
                       ),
                     ),
                   ],
